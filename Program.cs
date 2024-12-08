@@ -11,6 +11,7 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Services.AddControllers();
 builder.Services.AddDbContext<DataContext>(options =>
 {
     options.UseSqlite("Data Source=app.db");
@@ -48,15 +49,11 @@ builder
         };
     });
 builder.Services.AddAuthorization();
+builder.Services.AddCors();
 
 var app = builder.Build();
 
-app.UseCors(x =>
-    x.AllowAnyHeader()
-        .AllowAnyMethod()
-        .AllowCredentials()
-        .WithOrigins("http://localhost:4200", "https://localhost:4200")
-);
+app.UseCors(x => x.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin());
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -67,11 +64,19 @@ try
 {
     var context = services.GetRequiredService<DataContext>();
     await context.Database.MigrateAsync();
+    await Seeder.Seed(
+        services.GetRequiredService<UserManager<User>>(),
+        services.GetRequiredService<RoleManager<Role>>(),
+        context,
+        builder.Configuration
+    );
 }
 catch (Exception ex)
 {
     var logger = services.GetRequiredService<ILogger<Program>>();
     logger.LogError(ex, "An error occurred during migration");
 }
+
+app.MapControllers();
 
 app.Run();
