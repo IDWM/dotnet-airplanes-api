@@ -487,3 +487,7 @@ $RECYCLE.BIN/
 app.db-shm
 app.db
 app.db-wal
+
+# App settings
+appsettings.json
+appsettings.json
