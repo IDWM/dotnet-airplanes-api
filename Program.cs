@@ -1,8 +1,13 @@
+using System.Text;
 using dotnet_airplanes_api.Src.Data;
 using dotnet_airplanes_api.Src.Entities;
+using dotnet_airplanes_api.Src.Interfaces;
+using dotnet_airplanes_api.Src.Services;
 using dotnet_airplanes_api.Src.Validators;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +15,7 @@ builder.Services.AddDbContext<DataContext>(options =>
 {
     options.UseSqlite("Data Source=app.db");
 });
+builder.Services.AddScoped<ITokenService, TokenService>();
 builder
     .Services.AddIdentityCore<User>(opt =>
     {
@@ -25,6 +31,22 @@ builder
     .AddRoleManager<RoleManager<Role>>()
     .AddEntityFrameworkStores<DataContext>()
     .AddPasswordValidator<CustomPasswordValidator>();
+builder
+    .Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        var tokenKey =
+            builder.Configuration["JWTSettings:TokenKey"]
+            ?? throw new Exception("TokenKey not found");
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(tokenKey)),
+            ValidateIssuer = false,
+            ValidateAudience = false
+        };
+    });
 
 var app = builder.Build();
 
