@@ -47,8 +47,19 @@ builder
             ValidateAudience = false
         };
     });
+builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+app.UseCors(x =>
+    x.AllowAnyHeader()
+        .AllowAnyMethod()
+        .AllowCredentials()
+        .WithOrigins("http://localhost:4200", "https://localhost:4200")
+);
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 using var scope = app.Services.CreateScope();
 var services = scope.ServiceProvider;
